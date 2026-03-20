@@ -1,0 +1,40 @@
+profile_id: repo_safe_write
+version: "1.0"
+description: >
+  Capability profile derived from trace-benign-001 (benign_repo_maintenance).
+  Covers the minimal set of tools and actions required to read local files,
+  run tests, stage changes, commit, and push to a trusted remote.
+derived_from:
+  - traces/benign_repo_maintenance.json
+
+allowed_tools:
+  - fs_read
+  - shell_exec
+  - git_add
+  - git_commit
+  - git_push
+
+allowed_actions:
+  - read
+  - exec
+  - write
+
+allowed_resources:
+  - "repo://local/*"
+  - "repo://remote/origin/*"
+  - "shell://local"
+
+input_trust:
+  repo_local: trusted
+  environment: untrusted
+  llm_output: untrusted
+  tool_output: conditional
+
+constraints:
+  taint_propagation: deny_external
+  max_scope: single_repo
+  allow_network_calls: false
+  allow_env_secrets: false
+
+approval_required_resources:
+  - "repo://remote/origin/*"

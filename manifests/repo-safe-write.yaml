@@ -1,0 +1,72 @@
+manifest_id: repo-safe-write
+version: "1.0"
+description: >
+  World Manifest for a single-repo maintenance workflow.
+  Compiled from profile repo_safe_write (derived from trace-benign-001).
+  Enforces least-privilege access to one local repository with approval
+  required before any push to a remote.
+
+provenance:
+  author: Sergey Vlasov
+  created: "2026-03-01"
+  source_profile: profiles/repo_safe_write.yaml
+  source_traces:
+    - traces/benign_repo_maintenance.json
+
+input_trust:
+  repo_local: trusted
+  environment: untrusted
+  llm_output: untrusted
+  tool_output: conditional
+
+allowed_actions:
+  - action: fs_read
+    permitted_resources:
+      - "repo://local/*"
+    trust_required: trusted
+    taint_ok: false
+
+  - action: shell_exec
+    permitted_resources:
+      - "shell://local"
+    trust_required: trusted
+    taint_ok: false
+    note: "Only pre-approved commands (pytest). No shell constructed from LLM output."
+
+  - action: git_add
+    permitted_resources:
+      - "repo://local/staging"
+    trust_required: trusted
+    taint_ok: false
+
+  - action: git_commit
+    permitted_resources:
+      - "repo://local/commits"
+    trust_required: trusted
+    taint_ok: false
+
+  - action: git_push
+    permitted_resources:
+      - "repo://remote/origin/*"
+    trust_required: trusted
+    taint_ok: false
+
+approval_required:
+  - action: git_push
+    resource_pattern: "repo://remote/*"
+    reason: "All remote pushes require explicit operator approval."
+
+denied_actions:
+  - action: http_post
+    reason: "Outbound HTTP calls are not part of the declared workflow."
+  - action: env_read
+    reason: "Environment variable access is not part of the declared workflow."
+  - action: network_call
+    reason: "Any network call outside git_push to origin is denied."
+
+capability_constraints:
+  taint_propagation: deny_external
+  max_scope: single_repo
+  allow_network_calls: false
+  allow_env_secrets: false
+  undefined_actions: deny
