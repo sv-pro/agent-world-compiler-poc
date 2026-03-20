@@ -1,26 +1,32 @@
 # Agent World Compiler PoC
 
-A minimal proof-of-concept for a conference talk about securing agentic AI by
-converting observed agent execution into least-privilege runtime boundaries.
+A minimal proof-of-concept showing how observed agent execution can be compiled into deterministic least-privilege runtime boundaries.
+
+---
+
+## What this is
+
+This PoC does not try to make agent reasoning safe.  
+It makes the executable boundary around agent actions explicit, minimal, and reproducible.
 
 ---
 
 ## Problem statement
 
-Agentic AI systems execute sequences of tool calls on behalf of a user or an
-automated pipeline.  Each tool call touches a real resource (files, APIs,
-shells, credentials).  The agent's *effective capability* at runtime is rarely
-defined in advance; it expands opportunistically as the agent discovers new
-tools or receives instructions from untrusted sources.
+Agentic AI systems execute sequences of tool calls on behalf of a user or an automated pipeline. Each tool call touches a real resource (files, APIs, shells, credentials).
+
+In most systems, the agent's *effective capability* is not defined in advance. It evolves opportunistically through:
+- discovered tools,
+- prompt instructions,
+- runtime approvals.
+
+Decisions are made at runtime, not from a predefined execution boundary.
 
 This creates three concrete failure modes:
 
-1. **Scope creep** – the agent accumulates capabilities beyond what any single
-   workflow requires.
-2. **Taint propagation** – data from an untrusted source (LLM output, external
-   API response) flows into a side-effecting tool call without sanitisation.
-3. **Undefined behaviour** – the agent invokes a tool that was never part of
-   the intended workflow and there is no policy to deny it.
+1. **Scope creep** – the agent accumulates capabilities beyond what any single workflow requires.
+2. **Taint propagation** – data from an untrusted source (LLM output, external API response) flows into a side-effecting tool call without sanitisation.
+3. **Undefined behaviour** – the agent invokes a tool or action outside the intended workflow surface, with no predefined boundary to constrain it.
 
 ---
 
@@ -33,8 +39,10 @@ This creates three concrete failure modes:
 | Shell | Prompt-injection command execution | LLM-constructed shell command runs as the agent's user |
 | Trust boundary | Confused deputy | Agent uses a trusted credential to act on an untrusted instruction |
 
-Out of scope for this PoC: multi-agent trust, cryptographic attestation, and
-runtime sandboxing at the OS level.
+Out of scope for this PoC:
+- multi-agent trust
+- cryptographic attestation
+- OS-level sandboxing
 
 ---
 
@@ -42,38 +50,73 @@ runtime sandboxing at the OS level.
 
 Three claims are tested:
 
-1. **Observed execution can be reduced to a capability profile.**  
-   Running a trace through the profiler (`compiler/profiler.py`) produces a
-   minimal set of (tool, action, resource-prefix) triples.
+1. **Observed execution can be distilled into a capability profile.**  
+   Running a trace through the profiler (`compiler/profiler.py`) produces a minimal set of (tool, action, resource-prefix) triples.
 
 2. **That profile can be compiled into a manifest.**  
-   The manifest compiler (`compiler/compile_manifest.py`) translates the
-   profile into a human-readable, declarative YAML document.
+   The manifest compiler (`compiler/compile_manifest.py`) translates the profile into a human-readable, declarative YAML document.
 
-3. **The compiled manifest produces reproducible allow/deny/require-approval
-   decisions.**  
-   The enforcement engine (`policy/engine.py`) takes any (step, manifest) pair
-   and returns a deterministic `Decision` enum value.
+3. **The compiled manifest produces reproducible decisions.**  
+   The enforcement engine (`policy/engine.py`) takes any (step, manifest) pair and returns a deterministic `Decision` enum value.
 
 ---
 
 ## End-to-end flow
 
 ```
-Observe → Profile → Manifest → Enforce
+Observe → Profile → Manifest → Enforce → Decision
 ```
 
 ```
-traces/*.json          ← recorded agent execution (fixture files)
+traces/*.json
       ↓
-compiler/profiler.py   ← derive CapabilityProfile (allowed tools / actions / resources)
+compiler/profiler.py
       ↓
-compiler/compile_manifest.py  ← compile into a World Manifest (YAML)
+compiler/compile_manifest.py
       ↓
-policy/engine.py       ← evaluate each trace step → ALLOW | DENY | REQUIRE_APPROVAL
+policy/engine.py
+      ↓
+ALLOW | DENY | REQUIRE_APPROVAL
 ```
 
-See [`docs/architecture.md`](docs/architecture.md) for the full Mermaid diagram.
+---
+
+## Example
+
+### Allowed action
+
+```yaml
+step:
+  tool: git
+  action: commit
+  resource: repo://current
+  tainted: false
+
+decision:
+  result: ALLOW
+```
+
+### Denied action (tainted external)
+
+```yaml
+step:
+  tool: http
+  action: post
+  resource: https://external.example/api
+  tainted: true
+
+decision:
+  result: DENY
+  reason: tainted_external_side_effect
+```
+
+---
+
+## Why this matters
+
+- Reduces capability scope creep by deriving minimal execution surfaces
+- Converts runtime decisions into reproducible artifacts
+- Makes approval boundaries explicit and reviewable
 
 ---
 
@@ -81,33 +124,25 @@ See [`docs/architecture.md`](docs/architecture.md) for the full Mermaid diagram.
 
 ```
 .
-├── compiler/               # Profile derivation and manifest compilation
-│   ├── profiler.py         # derive_profile(): trace → CapabilityProfile
-│   └── compile_manifest.py # compile_manifest(): profile → World Manifest dict
+├── compiler/
+│   ├── profiler.py
+│   └── compile_manifest.py
 ├── demo/
-│   └── run.py              # End-to-end demo runner
+│   └── run.py
 ├── docs/
-│   └── architecture.md     # Mermaid architecture diagram
-├── examples/               # Short standalone usage examples
+│   └── architecture.md
+├── examples/
 ├── manifests/
-│   └── repo-safe-write.yaml  # Compiled manifest for the benign workflow
+│   └── repo-safe-write.yaml
 ├── policy/
-│   ├── engine.py           # Core enforcement engine
-│   └── evaluate.py         # CLI: evaluate a trace against a manifest
+│   ├── engine.py
+│   └── evaluate.py
 ├── profiles/
-│   └── repo_safe_write.yaml  # Derived capability profile
+│   └── repo_safe_write.yaml
 ├── tests/
-│   ├── conftest.py
-│   ├── test_engine.py      # Unit tests for the enforcement engine
-│   ├── test_compiler.py    # Unit tests for profiler and compiler
-│   └── test_integration.py # End-to-end pipeline tests
 ├── traces/
 │   ├── benign_repo_maintenance.json
 │   └── unsafe_exfiltration.json
-├── CITATION.cff
-├── CONTRIBUTING.md
-├── LICENSE
-├── Makefile
 ├── pyproject.toml
 └── requirements.txt
 ```
@@ -116,143 +151,76 @@ See [`docs/architecture.md`](docs/architecture.md) for the full Mermaid diagram.
 
 ## What is implemented
 
-- Trace schema (JSON) with `tool`, `action`, `resource`, `input_sources`, `tainted` per step.
-- `CapabilityProfile` derivation: tainted steps are counted but never widen the allowed set.
-- World Manifest schema: `allowed_actions`, `approval_required`, `denied_actions`,
-  `input_trust`, `capability_constraints`, `provenance`.
-- Deterministic enforcement engine with seven prioritised decision rules.
-- Two fixture traces: benign repo maintenance and unsafe exfiltration attempt.
-- One static manifest: `repo-safe-write`.
-- CLI: `python -m policy.evaluate --trace … --manifest …`
-- pytest suite proving all five invariants (determinism, undefined=deny, over-scoped=deny,
-  taint=deny-external, approval surfaced).
+- Trace schema with `tool`, `action`, `resource`, `input_sources`, `tainted`
+- CapabilityProfile derivation (tainted steps never widen scope)
+- World Manifest schema (declarative execution boundary)
+- Deterministic enforcement engine
+- Two trace fixtures (benign + unsafe)
+- CLI for evaluation
+- Unit tests covering core invariants
+
+---
 
 ## What is NOT implemented
 
-- Live LLM integration or real agent orchestration.
-- Cryptographic trace signing or attestation.
-- OS-level sandboxing (seccomp, cgroups).
-- Multi-agent or multi-principal trust hierarchies.
-- A web UI or dashboard.
-- Persistence / database.
+- Live LLM integration
+- Cryptographic attestation
+- OS-level sandboxing
+- Multi-agent trust models
+- UI / dashboard
+- Persistence layer
 
 ---
 
-## Setup
+## Core invariants
 
-**Requirements:** Python 3.12+
-
-```bash
-git clone https://github.com/sv-pro/agent-world-compiler-poc.git
-cd agent-world-compiler-poc
-pip install -e ".[dev]"
-```
+1. **Determinism** – same manifest + same step → same decision  
+2. **Undefined = deny** – actions outside manifest are rejected  
+3. **Over-scoped = deny** – disallowed resources are blocked  
+4. **Taint safety** – tainted data cannot trigger external side effects  
+5. **Explicit approval** – risky actions are surfaced, not hidden  
 
 ---
 
-## Running the demo
-
-```bash
-make demo
-# or
-python -m demo.run
-```
-
-The demo runs all four stages in sequence and prints a decision table for both
-the benign and the unsafe trace.
-
----
-
-## Running individual commands
-
-```bash
-# Derive a profile from a trace
-python -m compiler.profiler traces/benign_repo_maintenance.json
-
-# Compile a manifest from a profile
-python -m compiler.compile_manifest profiles/repo_safe_write.yaml
-
-# Evaluate a trace against a manifest
-python -m policy.evaluate \
-    --trace traces/benign_repo_maintenance.json \
-    --manifest manifests/repo-safe-write.yaml
-
-python -m policy.evaluate \
-    --trace traces/unsafe_exfiltration.json \
-    --manifest manifests/repo-safe-write.yaml
-
-# JSON output
-python -m policy.evaluate --json \
-    --trace traces/unsafe_exfiltration.json \
-    --manifest manifests/repo-safe-write.yaml
-```
-
----
-
-## Running tests
-
-```bash
-pytest
-# or
-make test
-```
-
-The test suite asserts five invariants:
-
-1. **Determinism** – same manifest + same step → same decision, every time.
-2. **Undefined actions denied** – any action not in `allowed_actions` → `DENY`.
-3. **Over-scoped actions denied** – HTTP calls, env reads, and pushes to
-   unauthorised remotes → `DENY`.
-4. **Tainted data cannot trigger external side effects** – tainted + external
-   resource → `DENY`.
-5. **Approval surfaced** – remote pushes → `REQUIRE_APPROVAL`.
-
----
-
-## Manifest schema reference
+## Manifest schema (excerpt)
 
 ```yaml
-manifest_id:       string
-version:           string
-description:       string
-provenance:
-  author:          string
-  created:         date
-  source_profile:  path
-  source_traces:   list[path]
-input_trust:       map[source_name → trusted|conditional|untrusted]
+manifest_id: string
+version: string
+
+input_trust:
+  source_name: trusted|conditional|untrusted
+
 allowed_actions:
-  - action:              string
-    permitted_resources: list[glob-pattern]
-    trust_required:      trusted|conditional|untrusted
-    taint_ok:            bool
+  - action: string
+    permitted_resources: list
+    trust_required: level
+    taint_ok: bool
+
 approval_required:
-  - action:            string
-    resource_pattern:  glob-pattern
-    reason:            string
+  - action: string
+    resource_pattern: glob
+    reason: string
+
 denied_actions:
   - action: string
     reason: string
+
 capability_constraints:
-  taint_propagation:  deny_external
-  max_scope:          string
+  taint_propagation: deny_external
   allow_network_calls: bool
-  allow_env_secrets:   bool
-  undefined_actions:   deny
+  allow_env_secrets: bool
+  undefined_actions: deny
 ```
+
+---
 
 ## Summit materials
 
-This repository includes conference-supporting materials for a proposed OWASP GenAI & Agentic Security summit talk.
-
-See [summit/README.md](summit/README.md) for CFP drafts, talk outline, demo plan, diagrams, and speaker notes.
+See `summit/README.md` for CFP drafts, demo plan, and diagrams.
 
 ---
 
 ## License
 
-MIT – see [LICENSE](LICENSE).
-
-## Citation
-
-See [CITATION.cff](CITATION.cff).
+MIT
