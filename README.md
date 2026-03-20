@@ -241,6 +241,12 @@ capability_constraints:
   undefined_actions:   deny
 ```
 
+## Summit materials
+
+This repository includes conference-supporting materials for a proposed OWASP GenAI & Agentic Security summit talk.
+
+See [summit/README.md](summit/README.md) for CFP drafts, talk outline, demo plan, diagrams, and speaker notes.
+
 ---
 
 ## License
