@@ -51,13 +51,13 @@ Out of scope for this PoC:
 Three claims are tested:
 
 1. **Observed execution can be distilled into a capability profile.**  
-   Running a trace through the profiler (`compiler/profiler.py`) produces a minimal set of (tool, action, resource-prefix) triples.
+   Running a trace through the profiler (`src/awc/compiler/profiler.py`) produces a minimal set of (tool, action, resource-prefix) triples.
 
 2. **That profile can be compiled into a manifest.**  
-   The manifest compiler (`compiler/compile_manifest.py`) translates the profile into a human-readable, declarative YAML document.
+   The manifest compiler (`src/awc/compiler/compile_manifest.py`) translates the profile into a human-readable, declarative YAML document.
 
 3. **The compiled manifest produces reproducible decisions.**  
-   The enforcement engine (`policy/engine.py`) takes any (step, manifest) pair and returns a deterministic `Decision` enum value.
+   The enforcement engine (`src/awc/policy/engine.py`) takes any (step, manifest) pair and returns a deterministic `Decision` enum value.
 
 ---
 
@@ -68,14 +68,14 @@ Observe → Profile → Manifest → Enforce → Decision
 ```
 
 ```
-traces/*.json
-      ↓
-compiler/profiler.py
-      ↓
-compiler/compile_manifest.py
-      ↓
-policy/engine.py
-      ↓
+fixtures/traces/*.json
+        ↓
+src/awc/compiler/profiler.py
+        ↓
+src/awc/compiler/compile_manifest.py
+        ↓
+src/awc/policy/engine.py
+        ↓
 ALLOW | DENY | REQUIRE_APPROVAL
 ```
 
@@ -124,26 +124,39 @@ decision:
 
 ```
 .
-├── compiler/
-│   ├── profiler.py
-│   └── compile_manifest.py
-├── demo/
-│   └── run.py
-├── docs/
-│   └── architecture.md
-├── examples/
-├── manifests/
-│   └── repo-safe-write.yaml
-├── policy/
-│   ├── engine.py
-│   └── evaluate.py
-├── profiles/
-│   └── repo_safe_write.yaml
-├── tests/
-├── traces/
-│   ├── benign_repo_maintenance.json
-│   └── unsafe_exfiltration.json
+├── src/awc/                        # library source code
+│   ├── compiler/
+│   │   ├── profiler.py             # derive capability profile from traces
+│   │   └── compile_manifest.py     # compile profile → World Manifest
+│   └── policy/
+│       ├── engine.py               # deterministic enforcement engine
+│       └── evaluate.py             # CLI trace evaluator
+│
+├── fixtures/                       # data artifacts (pipeline I/O)
+│   ├── traces/                     # recorded agent execution traces
+│   │   ├── benign_repo_maintenance.json
+│   │   └── unsafe_exfiltration.json
+│   ├── profiles/                   # derived capability profiles
+│   │   └── repo_safe_write.yaml
+│   └── manifests/                  # compiled world manifests
+│       └── repo-safe-write.yaml
+│
+├── tests/                          # pytest test suite
+│   ├── test_compiler.py            # profiler + manifest compiler tests
+│   ├── test_engine.py              # enforcement engine unit tests
+│   └── test_integration.py         # end-to-end pipeline tests
+│
+├── examples/                       # runnable examples and demos
+│   ├── demo_pipeline.py            # full four-stage demo
+│   ├── derive_and_compile.py       # compiler pipeline example
+│   └── evaluate_example.py         # engine usage example
+│
+├── docs/                           # documentation
+│   ├── architecture.md             # architecture and data model
+│   └── summit/                     # conference talk materials
+│
 ├── pyproject.toml
+├── Makefile
 └── requirements.txt
 ```
 
@@ -178,49 +191,38 @@ decision:
 2. **Undefined = deny** – actions outside manifest are rejected  
 3. **Over-scoped = deny** – disallowed resources are blocked  
 4. **Taint safety** – tainted data cannot trigger external side effects  
-5. **Explicit approval** – risky actions are surfaced, not hidden  
+5. **Approval gates** – sensitive actions surface explicitly  
 
 ---
 
-## Manifest schema (excerpt)
+## Quickstart
 
-```yaml
-manifest_id: string
-version: string
+```bash
+# Install
+pip install -e ".[dev]"
 
-input_trust:
-  source_name: trusted|conditional|untrusted
+# Run demo
+make demo
 
-allowed_actions:
-  - action: string
-    permitted_resources: list
-    trust_required: level
-    taint_ok: bool
+# Run tests
+make test
 
-approval_required:
-  - action: string
-    resource_pattern: glob
-    reason: string
+# Evaluate traces
+make evaluate-benign
+make evaluate-unsafe
 
-denied_actions:
-  - action: string
-    reason: string
-
-capability_constraints:
-  taint_propagation: deny_external
-  allow_network_calls: bool
-  allow_env_secrets: bool
-  undefined_actions: deny
+# Recompile manifest from profile
+make compile
 ```
-
----
-
-## Summit materials
-
-See `summit/README.md` for CFP drafts, demo plan, and diagrams.
 
 ---
 
 ## License
 
 MIT
+
+---
+
+## Citation
+
+See [CITATION.cff](CITATION.cff).

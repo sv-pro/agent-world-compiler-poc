@@ -10,7 +10,7 @@ Usage (module):
     profile = derive_profile(["traces/benign_repo_maintenance.json"])
 
 Usage (CLI):
-    python -m compiler.profiler traces/benign_repo_maintenance.json
+    python -m awc.compiler.profiler traces/benign_repo_maintenance.json
 """
 
 from __future__ import annotations
@@ -84,7 +84,7 @@ def derive_profile(trace_paths: Iterable[str | Path], profile_id: str = "derived
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python -m compiler.profiler <trace.json> [<trace2.json> ...]")
+        print("Usage: python -m awc.compiler.profiler <trace.json> [<trace2.json> ...]")
         sys.exit(1)
 
     profile = derive_profile(sys.argv[1:], profile_id="derived_profile")

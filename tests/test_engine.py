@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import pytest
 
-from policy.engine import Decision, evaluate_step
+from awc.policy.engine import Decision, evaluate_step
 
 
 # ------------------------------------------------------------------ #

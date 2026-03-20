@@ -11,11 +11,11 @@ from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
-from compiler.profiler import derive_profile
-from compiler.compile_manifest import compile_manifest
+from awc.compiler.profiler import derive_profile
+from awc.compiler.compile_manifest import compile_manifest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-BENIGN_TRACE = REPO_ROOT / "traces" / "benign_repo_maintenance.json"
+BENIGN_TRACE = REPO_ROOT / "fixtures" / "traces" / "benign_repo_maintenance.json"
 
 
 def main() -> None:

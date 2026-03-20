@@ -1,5 +1,5 @@
 """
-conftest.py – shared pytest fixtures for the Agent World Compiler PoC.
+conftest.py – shared pytest fixtures for the Agent World Compiler.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ def repo_root() -> Path:
 @pytest.fixture()
 def static_manifest(repo_root: Path) -> dict:
     """Load the static repo-safe-write manifest from disk."""
-    path = repo_root / "manifests" / "repo-safe-write.yaml"
+    path = repo_root / "fixtures" / "manifests" / "repo-safe-write.yaml"
     with path.open() as fh:
         return yaml.safe_load(fh)
 

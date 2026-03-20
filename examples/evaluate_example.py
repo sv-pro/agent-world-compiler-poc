@@ -9,10 +9,10 @@ from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
-from policy.engine import Decision, evaluate_step
+from awc.policy.engine import Decision, evaluate_step
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-MANIFEST_PATH = REPO_ROOT / "manifests" / "repo-safe-write.yaml"
+MANIFEST_PATH = REPO_ROOT / "fixtures" / "manifests" / "repo-safe-write.yaml"
 
 
 def main() -> None:

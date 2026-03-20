@@ -21,12 +21,12 @@ dev = [
 ]
 
 [project.scripts]
-awc-evaluate = "policy.evaluate:main"
+awc-evaluate = "awc.policy.evaluate:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["compiler*", "policy*", "demo*"]
+where = ["src"]
+include = ["awc*"]

@@ -14,14 +14,14 @@ from pathlib import Path
 import pytest
 import yaml  # type: ignore[import-untyped]
 
-from compiler.profiler import derive_profile
-from compiler.compile_manifest import compile_manifest
-from policy.engine import Decision, evaluate_step
+from awc.compiler.profiler import derive_profile
+from awc.compiler.compile_manifest import compile_manifest
+from awc.policy.engine import Decision, evaluate_step
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-BENIGN_TRACE_PATH = REPO_ROOT / "traces" / "benign_repo_maintenance.json"
-UNSAFE_TRACE_PATH = REPO_ROOT / "traces" / "unsafe_exfiltration.json"
-STATIC_MANIFEST_PATH = REPO_ROOT / "manifests" / "repo-safe-write.yaml"
+BENIGN_TRACE_PATH = REPO_ROOT / "fixtures" / "traces" / "benign_repo_maintenance.json"
+UNSAFE_TRACE_PATH = REPO_ROOT / "fixtures" / "traces" / "unsafe_exfiltration.json"
+STATIC_MANIFEST_PATH = REPO_ROOT / "fixtures" / "manifests" / "repo-safe-write.yaml"
 
 
 def _load_trace(path: Path) -> dict:

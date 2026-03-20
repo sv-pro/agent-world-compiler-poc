@@ -1,11 +1,11 @@
 """
-demo/run.py – end-to-end demonstration of the Agent World Compiler PoC.
+examples/demo_pipeline.py – end-to-end demonstration of the Agent World Compiler.
 
 Runs the full pipeline for both the benign and the unsafe trace:
     Observe → Profile → Manifest → Enforce
 
 Usage:
-    python -m demo.run
+    python -m examples.demo_pipeline
     make demo
 """
 
@@ -16,17 +16,17 @@ from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
-from compiler.profiler import derive_profile
-from compiler.compile_manifest import compile_manifest
-from policy.engine import evaluate_step, Decision
+from awc.compiler.profiler import derive_profile
+from awc.compiler.compile_manifest import compile_manifest
+from awc.policy.engine import evaluate_step, Decision
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 TRACES = {
-    "benign": REPO_ROOT / "traces" / "benign_repo_maintenance.json",
-    "unsafe": REPO_ROOT / "traces" / "unsafe_exfiltration.json",
+    "benign": REPO_ROOT / "fixtures" / "traces" / "benign_repo_maintenance.json",
+    "unsafe": REPO_ROOT / "fixtures" / "traces" / "unsafe_exfiltration.json",
 }
-STATIC_MANIFEST = REPO_ROOT / "manifests" / "repo-safe-write.yaml"
+STATIC_MANIFEST = REPO_ROOT / "fixtures" / "manifests" / "repo-safe-write.yaml"
 
 
 def _banner(title: str) -> None:

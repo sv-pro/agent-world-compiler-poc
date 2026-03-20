@@ -5,7 +5,7 @@ Evaluates every step in a trace against a manifest and prints a decision
 table.
 
 Usage:
-    python -m policy.evaluate --trace traces/example.json \\
+    python -m awc.policy.evaluate --trace traces/example.json \\
                                --manifest manifests/repo-safe-write.yaml
 """
 
@@ -18,7 +18,7 @@ from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
-from policy.engine import Decision, evaluate_step
+from awc.policy.engine import Decision, evaluate_step
 
 
 def evaluate_trace(trace_path: Path, manifest_path: Path) -> list[dict]:

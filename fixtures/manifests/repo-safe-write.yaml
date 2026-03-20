@@ -9,9 +9,9 @@ description: >
 provenance:
   author: Sergey Vlasov
   created: "2026-03-01"
-  source_profile: profiles/repo_safe_write.yaml
+  source_profile: fixtures/profiles/repo_safe_write.yaml
   source_traces:
-    - traces/benign_repo_maintenance.json
+    - fixtures/traces/benign_repo_maintenance.json
 
 input_trust:
   repo_local: trusted

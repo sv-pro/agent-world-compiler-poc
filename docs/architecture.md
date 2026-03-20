@@ -16,19 +16,19 @@ flowchart TD
     B -->|"recorded trace\n(step list)"| C
 
     subgraph Profile["Stage 2 – Profile"]
-        C["Capability Profile Derivation\n(compiler/profiler.py)"]
+        C["Capability Profile Derivation\n(src/awc/compiler/profiler.py)"]
     end
 
     C -->|"allowed tools / actions /\nresources (YAML)"| D
 
     subgraph Compile["Stage 3 – Compile"]
-        D["World Manifest Compiler\n(compiler/compile_manifest.py)"]
+        D["World Manifest Compiler\n(src/awc/compiler/compile_manifest.py)"]
     end
 
     D -->|"declarative manifest\n(YAML)"| E
 
     subgraph Enforce["Stage 4 – Enforce"]
-        E["Enforcement Engine\n(policy/engine.py)"]
+        E["Enforcement Engine\n(src/awc/policy/engine.py)"]
     end
 
     E -->|"decision"| F
@@ -48,12 +48,12 @@ flowchart TD
 
 | Component | File(s) | Role |
 |---|---|---|
-| Trace fixtures | `traces/*.json` | Immutable, recorded observations of agent/tool execution. |
-| Profiler | `compiler/profiler.py` | Derives a `CapabilityProfile` from one or more traces.  Tainted steps are counted but never widen the allowed set. |
-| Manifest compiler | `compiler/compile_manifest.py` | Translates a `CapabilityProfile` into a structured YAML manifest. |
-| Enforcement engine | `policy/engine.py` | Evaluates a single trace step against a manifest and returns a deterministic `Decision`. |
-| CLI wrapper | `policy/evaluate.py` | Iterates all steps of a trace and prints a decision table. |
-| Demo runner | `demo/run.py` | Executes the full four-stage pipeline and prints a human-readable summary. |
+| Trace fixtures | `fixtures/traces/*.json` | Immutable, recorded observations of agent/tool execution. |
+| Profiler | `src/awc/src/awc/compiler/profiler.py` | Derives a `CapabilityProfile` from one or more traces.  Tainted steps are counted but never widen the allowed set. |
+| Manifest compiler | `src/awc/src/awc/compiler/compile_manifest.py` | Translates a `CapabilityProfile` into a structured YAML manifest. |
+| Enforcement engine | `src/awc/src/awc/policy/engine.py` | Evaluates a single trace step against a manifest and returns a deterministic `Decision`. |
+| CLI wrapper | `src/awc/policy/evaluate.py` | Iterates all steps of a trace and prints a decision table. |
+| Demo runner | `examples/demo_pipeline.py` | Executes the full four-stage pipeline and prints a human-readable summary. |
 
 ## Data model
 

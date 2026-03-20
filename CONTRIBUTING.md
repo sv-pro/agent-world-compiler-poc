@@ -23,17 +23,17 @@ pytest
    run offline with only the files in this repository.
 4. **Match the existing code style.** Python 3.12, type-annotated, no third-
    party dependencies beyond `pyyaml` and `pytest`.
-5. **Write tests.** Every change to `compiler/` or `policy/` needs a
+5. **Write tests.** Every change to `src/awc/compiler/` or `src/awc/policy/` needs a
    corresponding unit or integration test.
 
 ## Adding a new trace
 
-1. Record or craft a JSON fixture in `traces/`.
+1. Record or craft a JSON fixture in `fixtures/traces/`.
 2. Ensure every step has at minimum: `step_id`, `tool`, `action`, `resource`,
    `input_sources`, `tainted`.
-3. Derive a profile with `python -m compiler.profiler traces/your_trace.json`.
+3. Derive a profile with `python -m awc.compiler.profiler fixtures/traces/your_trace.json`.
 4. If the profile represents a new workflow, compile a manifest with
-   `python -m compiler.compile_manifest profiles/your_profile.yaml`.
+   `python -m awc.compiler.compile_manifest fixtures/profiles/your_profile.yaml`.
 
 ## Submitting changes
 

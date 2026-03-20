@@ -17,7 +17,7 @@ Usage (module):
     manifest = compile_manifest(profile)
 
 Usage (CLI):
-    python -m compiler.compile_manifest profiles/repo_safe_write.yaml
+    python -m awc.compiler.compile_manifest profiles/repo_safe_write.yaml
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 
-from compiler.profiler import CapabilityProfile, derive_profile
+from awc.compiler.profiler import CapabilityProfile, derive_profile
 
 _ALWAYS_DENIED = [
     {"action": "http_post", "reason": "Outbound HTTP calls are not part of the declared workflow."},
@@ -97,7 +97,7 @@ def compile_manifest(
         "provenance": {
             "author": author,
             "created": str(date.today()),
-            "source_profile": f"profiles/{profile.profile_id}.yaml",
+            "source_profile": f"fixtures/profiles/{profile.profile_id}.yaml",
             "source_traces": profile.derived_from,
         },
         "input_trust": _DEFAULT_INPUT_TRUST,
@@ -129,7 +129,7 @@ def _load_profile_yaml(path: Path) -> CapabilityProfile:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python -m compiler.compile_manifest <profile.yaml> [manifest_id] [author]")
+        print("Usage: python -m awc.compiler.compile_manifest <profile.yaml> [manifest_id] [author]")
         sys.exit(1)
 
     profile_path = Path(sys.argv[1])
