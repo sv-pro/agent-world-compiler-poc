@@ -2,7 +2,8 @@
 evaluate.py – CLI wrapper for the enforcement engine.
 
 Evaluates every step in a trace against a manifest and prints a decision
-table.
+table.  Taint is computed deterministically from input provenance and
+propagated through depends_on dependencies before any step is evaluated.
 
 Usage:
     python -m awc.policy.evaluate --trace traces/example.json \\
@@ -19,6 +20,7 @@ from pathlib import Path
 import yaml  # type: ignore[import-untyped]
 
 from awc.policy.engine import Decision, evaluate_step
+from awc.policy.taint import compute_trace_taint
 
 
 def evaluate_trace(trace_path: Path, manifest_path: Path) -> list[dict]:
@@ -27,16 +29,26 @@ def evaluate_trace(trace_path: Path, manifest_path: Path) -> list[dict]:
     with manifest_path.open() as fh:
         manifest = yaml.safe_load(fh)
 
+    steps = trace.get("steps", [])
+    input_trust_map: dict[str, str] = manifest.get("input_trust", {})
+
+    # Derive taint for the full trace in execution order, propagating through
+    # depends_on references.  This replaces reading the raw 'tainted' field.
+    taint_state = compute_trace_taint(steps, input_trust_map)
+
     results = []
-    for step in trace.get("steps", []):
-        decision, reason = evaluate_step(step, manifest)
+    for step in steps:
+        step_id = step.get("step_id", "?")
+        derived_taint, taint_reasons = taint_state.get(step_id, (False, []))
+        decision, reason = evaluate_step(step, manifest, derived_taint=derived_taint, taint_reasons=taint_reasons)
         results.append(
             {
-                "step_id": step.get("step_id", "?"),
+                "step_id": step_id,
                 "tool": step.get("tool", "?"),
                 "action": step.get("action", "?"),
                 "resource": step.get("resource", "?"),
-                "tainted": step.get("tainted", False),
+                "derived_taint": derived_taint,
+                "taint_reasons": taint_reasons,
                 "decision": decision.value,
                 "reason": reason,
             }
@@ -49,7 +61,7 @@ def _print_table(results: list[dict]) -> None:
         "step_id": 10,
         "tool": 14,
         "resource": 38,
-        "decision": 18,
+        "decision": 20,
     }
     header = (
         f"{'STEP':<{col_widths['step_id']}}"
@@ -61,7 +73,7 @@ def _print_table(results: list[dict]) -> None:
     print(header)
     print("-" * 120)
     for r in results:
-        taint_flag = " [TAINTED]" if r["tainted"] else ""
+        taint_flag = " [TAINTED]" if r["derived_taint"] else ""
         print(
             f"{r['step_id']:<{col_widths['step_id']}}"
             f"{r['tool']:<{col_widths['tool']}}"
