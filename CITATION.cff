@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Agent World Compiler PoC"
+abstract: >
+  A minimal proof-of-concept for a conference talk about securing agentic AI
+  by converting observed agent execution traces into least-privilege runtime
+  boundaries (World Manifests) and enforcing deterministic allow/deny decisions.
+authors:
+  - family-names: Vlasov
+    given-names: Sergey
+repository-code: "https://github.com/sv-pro/agent-world-compiler-poc"
+license: MIT
+date-released: "2026-03-01"
+version: "0.1.0"
+keywords:
+  - agentic AI
+  - least privilege
+  - capability profile
+  - policy enforcement
+  - world manifest
+  - security

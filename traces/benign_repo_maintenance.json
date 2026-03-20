@@ -1,0 +1,53 @@
+{
+  "trace_id": "trace-benign-001",
+  "workflow": "repo_maintenance",
+  "description": "A benign repository maintenance workflow: read files, run tests, commit and push to origin.",
+  "recorded_at": "2026-03-01T10:00:00Z",
+  "steps": [
+    {
+      "step_id": "step-001",
+      "tool": "fs_read",
+      "action": "read",
+      "resource": "repo://local/src/main.py",
+      "input_sources": ["repo_local"],
+      "tainted": false,
+      "metadata": {"bytes_read": 1240}
+    },
+    {
+      "step_id": "step-002",
+      "tool": "shell_exec",
+      "action": "exec",
+      "resource": "shell://local",
+      "input_sources": ["repo_local"],
+      "tainted": false,
+      "metadata": {"command": "pytest tests/", "exit_code": 0}
+    },
+    {
+      "step_id": "step-003",
+      "tool": "git_add",
+      "action": "write",
+      "resource": "repo://local/staging",
+      "input_sources": ["repo_local"],
+      "tainted": false,
+      "metadata": {"files": ["src/main.py"]}
+    },
+    {
+      "step_id": "step-004",
+      "tool": "git_commit",
+      "action": "write",
+      "resource": "repo://local/commits",
+      "input_sources": ["repo_local"],
+      "tainted": false,
+      "metadata": {"message": "chore: update main module"}
+    },
+    {
+      "step_id": "step-005",
+      "tool": "git_push",
+      "action": "write",
+      "resource": "repo://remote/origin/main",
+      "input_sources": ["repo_local"],
+      "tainted": false,
+      "metadata": {"remote": "origin", "branch": "main"}
+    }
+  ]
+}
