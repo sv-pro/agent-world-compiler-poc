@@ -151,6 +151,9 @@ decision:
 │   ├── derive_and_compile.py       # compiler pipeline example
 │   └── evaluate_example.py         # engine usage example
 │
+├── notebooks/                      # interactive Jupyter notebooks
+│   └── pipeline_walkthrough.ipynb  # step-by-step pipeline demo
+│
 ├── docs/                           # documentation
 │   ├── architecture.md             # architecture and data model
 │   └── summit/                     # conference talk materials
@@ -171,6 +174,7 @@ decision:
 - Two trace fixtures (benign + unsafe)
 - CLI for evaluation
 - Unit tests covering core invariants
+- Interactive Jupyter notebook walkthrough
 
 ---
 
@@ -200,6 +204,9 @@ decision:
 ```bash
 # Install
 pip install -e ".[dev]"
+
+# Interactive notebook
+jupyter notebook notebooks/pipeline_walkthrough.ipynb
 
 # Run demo
 make demo

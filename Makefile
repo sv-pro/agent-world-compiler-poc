@@ -1,10 +1,13 @@
-.PHONY: demo test lint install help
+.PHONY: demo test lint install help notebook
 
 install:
 	pip install -e ".[dev]"
 
 demo:
 	python -m examples.demo_pipeline
+
+notebook:
+	jupyter notebook notebooks/pipeline_walkthrough.ipynb
 
 compile:
 	python -m awc.compiler.compile_manifest fixtures/profiles/repo_safe_write.yaml repo-safe-write "Sergey Vlasov"
@@ -26,6 +29,7 @@ help:
 	@echo "Targets:"
 	@echo "  install          Install project and dev dependencies"
 	@echo "  demo             Run the end-to-end demo pipeline"
+	@echo "  notebook         Open the interactive pipeline walkthrough"
 	@echo "  compile          Recompile the example manifest from the profile"
 	@echo "  evaluate-benign  Evaluate the benign trace against the manifest"
 	@echo "  evaluate-unsafe  Evaluate the unsafe trace against the manifest"
