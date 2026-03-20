@@ -30,19 +30,13 @@ from typing import Any
 import yaml  # type: ignore[import-untyped]
 
 from awc.compiler.profiler import CapabilityProfile, derive_profile
+from awc.policy.taint import DEFAULT_INPUT_TRUST
 
 _ALWAYS_DENIED = [
     {"action": "http_post", "reason": "Outbound HTTP calls are not part of the declared workflow."},
     {"action": "env_read", "reason": "Environment variable access is not part of the declared workflow."},
     {"action": "network_call", "reason": "Any network call outside git_push to origin is denied."},
 ]
-
-_DEFAULT_INPUT_TRUST = {
-    "repo_local": "trusted",
-    "environment": "untrusted",
-    "llm_output": "untrusted",
-    "tool_output": "conditional",
-}
 
 _REMOTE_PATTERN = "repo://remote/"
 
@@ -100,7 +94,7 @@ def compile_manifest(
             "source_profile": f"fixtures/profiles/{profile.profile_id}.yaml",
             "source_traces": profile.derived_from,
         },
-        "input_trust": _DEFAULT_INPUT_TRUST,
+        "input_trust": DEFAULT_INPUT_TRUST,
         "allowed_actions": allowed,
         "approval_required": unique_approval,
         "denied_actions": _ALWAYS_DENIED,

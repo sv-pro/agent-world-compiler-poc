@@ -1,7 +1,7 @@
 {
   "trace_id": "trace-benign-001",
   "workflow": "repo_maintenance",
-  "description": "A benign repository maintenance workflow: read files, run tests, commit and push to origin.",
+  "description": "A benign repository maintenance workflow: read files, run tests, commit and push to origin. All steps draw from repo_local (trusted), so derived taint stays false throughout.",
   "recorded_at": "2026-03-01T10:00:00Z",
   "steps": [
     {
@@ -10,7 +10,7 @@
       "action": "read",
       "resource": "repo://local/src/main.py",
       "input_sources": ["repo_local"],
-      "tainted": false,
+      "depends_on": [],
       "metadata": {"bytes_read": 1240}
     },
     {
@@ -19,7 +19,7 @@
       "action": "exec",
       "resource": "shell://local",
       "input_sources": ["repo_local"],
-      "tainted": false,
+      "depends_on": ["step-001"],
       "metadata": {"command": "pytest tests/", "exit_code": 0}
     },
     {
@@ -28,7 +28,7 @@
       "action": "write",
       "resource": "repo://local/staging",
       "input_sources": ["repo_local"],
-      "tainted": false,
+      "depends_on": ["step-002"],
       "metadata": {"files": ["src/main.py"]}
     },
     {
@@ -37,7 +37,7 @@
       "action": "write",
       "resource": "repo://local/commits",
       "input_sources": ["repo_local"],
-      "tainted": false,
+      "depends_on": ["step-003"],
       "metadata": {"message": "chore: update main module"}
     },
     {
@@ -46,7 +46,7 @@
       "action": "write",
       "resource": "repo://remote/origin/main",
       "input_sources": ["repo_local"],
-      "tainted": false,
+      "depends_on": ["step-004"],
       "metadata": {"remote": "origin", "branch": "main"}
     }
   ]

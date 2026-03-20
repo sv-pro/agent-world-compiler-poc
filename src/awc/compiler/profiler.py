@@ -5,6 +5,11 @@ A profile is the union of every (tool, action, resource-prefix) triple
 observed across all trace steps that are not tainted.  Tainted steps are
 noted separately; they never widen the allowed set.
 
+Taint is derived deterministically: a step is tainted if any of its
+input_sources is untrusted, OR if any step it depends_on is tainted.
+The legacy 'tainted' field in trace JSON is ignored; provenance and
+execution flow are the source of truth.
+
 Usage (module):
     from compiler.profiler import derive_profile
     profile = derive_profile(["traces/benign_repo_maintenance.json"])
@@ -20,6 +25,8 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
+
+from awc.policy.taint import DEFAULT_INPUT_TRUST, compute_trace_taint
 
 
 @dataclass
@@ -50,8 +57,19 @@ def _resource_prefix(resource: str) -> str:
     return resource + "/*"
 
 
-def derive_profile(trace_paths: Iterable[str | Path], profile_id: str = "derived") -> CapabilityProfile:
-    """Load one or more trace files and return a CapabilityProfile."""
+def derive_profile(
+    trace_paths: Iterable[str | Path],
+    profile_id: str = "derived",
+    input_trust: dict[str, str] | None = None,
+) -> CapabilityProfile:
+    """Load one or more trace files and return a CapabilityProfile.
+
+    Taint is computed with full propagation via depends_on (compute_trace_taint).
+    A step is excluded if it is tainted by source OR if it depends on a tainted
+    step.  The legacy 'tainted' field is ignored.
+    """
+    trust_map = input_trust if input_trust is not None else DEFAULT_INPUT_TRUST
+
     tools: set[str] = set()
     actions: set[str] = set()
     resources: set[str] = set()
@@ -64,8 +82,14 @@ def derive_profile(trace_paths: Iterable[str | Path], profile_id: str = "derived
         with path.open() as fh:
             trace = json.load(fh)
 
-        for step in trace.get("steps", []):
-            if step.get("tainted", False):
+        steps = trace.get("steps", [])
+        # Compute taint with propagation across the full trace.
+        taint_state = compute_trace_taint(steps, trust_map)
+
+        for step in steps:
+            step_id = step.get("step_id", "?")
+            is_tainted, _ = taint_state.get(step_id, (False, []))
+            if is_tainted:
                 tainted_count += 1
                 continue  # tainted steps never expand allowed set
             tools.add(step["tool"])
