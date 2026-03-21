@@ -1,7 +1,6 @@
 # Architecture
 
-The Agent World Compiler PoC is structured as a linear pipeline with five
-named stages.  Each stage has a clear input and a clear output.
+The Agent World Compiler PoC is structured as a linear pipeline with four named stages. Each stage has a clear input and a clear output.
 
 ## End-to-end pipeline
 
@@ -16,13 +15,13 @@ flowchart TD
     B -->|"trace JSON\n(step list)"| C
 
     subgraph Profile["Stage 1 – Profile"]
-        C["Capability Profile Derivation\n(src/awc/compiler/profiler.py)"]
+        C["Profiler\n(src/awc/compiler/profiler.py)"]
     end
 
-    C -->|"allowed tools / actions /\nresources (YAML)"| D
+    C -->|"capability profile\n(YAML)"| D
 
     subgraph Compile["Stage 2 – Compile"]
-        D["World Manifest Compiler\n(src/awc/compiler/compile_manifest.py)"]
+        D["Manifest Compiler\n(src/awc/compiler/compile_manifest.py)"]
     end
 
     D -->|"declarative manifest\n(YAML)"| E
@@ -44,18 +43,47 @@ flowchart TD
     style Output   fill:#fce4ec,stroke:#c62828
 ```
 
+The trace is the first concrete runtime artifact. Profile, manifest, and decisions are all derived from it.
+
 ## Component responsibilities
 
 | Component | File(s) | Role |
 | --- | --- | --- |
-| **TraceRecorder** | `src/awc/observe/recorder.py` | Stage 0 — records agent tool calls into a trace JSON file.  The fixtures in `fixtures/traces/` are the saved output of a recorder. |
-| Trace fixtures | `fixtures/traces/*.json` | Immutable, recorded observations of agent/tool execution. |
-| Profiler | `src/awc/compiler/profiler.py` | Derives a `CapabilityProfile` from one or more traces.  Tainted steps are counted but never widen the allowed set. |
-| Manifest compiler | `src/awc/compiler/compile_manifest.py` | Translates a `CapabilityProfile` into a structured YAML manifest. |
-| Enforcement engine | `src/awc/policy/engine.py` | Evaluates a single trace step against a manifest and returns a deterministic `Decision`. |
+| **TraceRecorder** | `src/awc/observe/recorder.py` | Stage 0 — records agent tool calls into a trace JSON file. The fixtures in `fixtures/traces/` are the saved output of a recorder. |
+| Trace fixtures | `fixtures/traces/*.json` | Recorded observations of agent/tool execution. Used as pipeline inputs in examples and tests. |
+| **Profiler** | `src/awc/compiler/profiler.py` | Stage 1 — reads one or more traces and derives a `CapabilityProfile`. Tainted steps (by provenance) are counted but never widen the allowed set. |
+| **Manifest compiler** | `src/awc/compiler/compile_manifest.py` | Stage 2 — translates a `CapabilityProfile` into a structured YAML manifest. Applies safe compression: may reduce precision, but cannot add capabilities absent from the trace. |
+| **Taint module** | `src/awc/policy/taint.py` | Derives taint deterministically from `input_sources × bootstrap trust model`. Propagates taint through `depends_on`. |
+| **Enforcement engine** | `src/awc/policy/engine.py` | Stage 3 — evaluates a single trace step against a manifest and returns a deterministic `Decision`. |
 | CLI wrapper | `src/awc/policy/evaluate.py` | Iterates all steps of a trace and prints a decision table. |
 | Demo runner | `examples/demo_pipeline.py` | Executes the full pipeline from fixtures and prints a human-readable summary. |
 | Record + compile demo | `examples/record_and_compile.py` | Shows the full pipeline starting from `TraceRecorder` — no fixture files needed. |
+
+## Bootstrap trust model
+
+The taint module defines a built-in default trust mapping:
+
+```python
+DEFAULT_INPUT_TRUST = {
+    "repo_local":   "trusted",
+    "environment":  "untrusted",
+    "llm_output":   "untrusted",
+    "tool_output":  "conditional",
+}
+```
+
+This is the **bootstrap trust model** — the system's starting assumption about input sources. It is not user-authored; it is built in. The manifest compiler copies this mapping into the manifest's `input_trust` block. It can be refined in a specific manifest, but the bootstrap defaults apply unless overridden.
+
+## Taint derivation
+
+Taint is derived, not annotated. The derivation is deterministic:
+
+1. For each step, look up each `input_source` in the `input_trust` map.
+2. If any source resolves to `untrusted` or `conditional`, the step is **source-tainted**.
+3. If any step in `depends_on` is tainted (transitively), the step is **propagation-tainted**.
+4. Final taint = source taint OR propagation taint.
+
+The legacy `tainted: true/false` annotation in older traces is ignored. Provenance and flow are the only source of truth.
 
 ## Data model
 
@@ -81,17 +109,29 @@ WorldManifest (YAML)
   │     └── taint_ok
   ├── approval_required[]
   ├── denied_actions[]
-  ├── input_trust{}
+  ├── input_trust{}          ← compiled from bootstrap trust model
   ├── capability_constraints{}
   └── provenance{}
 ```
 
+### Current abstraction level
+
+The trace schema captures `(tool, action, resource)` per step. The profiler and compiler currently collapse some of this structure — for example, actions are grouped by type rather than tracked as distinct `(tool, action, resource)` triples in the manifest. This is a deliberate PoC simplification; the trace schema retains the richer structure for future use.
+
 ## Decision rules (priority order)
 
-1. **Taint + external** → `DENY`
+1. **Taint + external resource** → `DENY`
 2. **Explicitly denied action** → `DENY`
 3. **Action not in allowed set** → `DENY` *(undefined = deny)*
 4. **Resource outside permitted patterns** → `DENY`
 5. **Input trust below required** → `DENY`
 6. **Matches approval_required** → `REQUIRE_APPROVAL`
 7. **Otherwise** → `ALLOW`
+
+## Core invariants
+
+1. **Determinism** — same manifest + same step → same decision, always.
+2. **Undefined = deny** — any action not listed in `allowed_actions` is rejected.
+3. **Safe compression** — the manifest may compress observed behavior, but must not introduce capabilities absent from the safe trace.
+4. **Taint safety** — tainted data cannot trigger an external side effect; taint is derived from provenance, not from an annotation.
+5. **Approval gates** — sensitive operations surface as `REQUIRE_APPROVAL` rather than being silently allowed or denied.
