@@ -14,10 +14,12 @@ This PoC is workflow-scoped: each manifest defines a least-privilege boundary fo
 The central pattern is:
 
 ```
-Observe → Profile → Manifest → Enforce
+Observe → Profile → Manifest → Render Tools → Enforce
 ```
 
-Execution traces are recorded from agent/tool activity. A profiler derives a minimal safe capability profile from observed benign behavior. A compiler turns that profile into a declarative manifest. A deterministic policy engine evaluates steps against that manifest.
+Execution traces are recorded from agent/tool activity. A profiler derives a minimal safe capability profile from observed benign behavior. A compiler turns that profile into a declarative manifest. The manifest is then projected into a narrowed, agent-facing tool surface (rendered tools). A deterministic policy engine evaluates steps against that manifest.
+
+The PoC primarily demonstrates deterministic enforcement, but it also includes a minimal rendered-tools projection step. In the full model, the agent would consume rendered tools instead of raw tools — meaning capabilities are not only checked externally, they can also be rendered as the only tools the agent is allowed to see.
 
 ---
 
@@ -74,7 +76,7 @@ Three claims are tested:
 ## End-to-end flow
 
 ```
-Observe → Profile → Manifest → Enforce → Decision
+Observe → Profile → Manifest → Render Tools → Enforce → Decision
 ```
 
 ```
@@ -83,6 +85,8 @@ fixtures/traces/*.json
 src/awc/compiler/profiler.py      (derive_profile: taint from provenance)
         ↓
 src/awc/compiler/compile_manifest.py
+        ↓
+src/awc/compiler/render_tools.py  (render_tools: manifest → agent-facing tool surface)
         ↓
 src/awc/policy/taint.py           (compute_trace_taint: derive + propagate)
         ↓
@@ -253,7 +257,8 @@ decision:
 │   │   └── recorder.py             # Stage 0: record tool calls into traces
 │   ├── compiler/
 │   │   ├── profiler.py             # Stage 1: derive capability profile from traces
-│   │   └── compile_manifest.py     # Stage 2: compile profile → World Manifest
+│   │   ├── compile_manifest.py     # Stage 2: compile profile → World Manifest
+│   │   └── render_tools.py         # Stage 2.5: manifest → rendered tool descriptors
 │   └── policy/
 │       ├── taint.py                # deterministic taint derivation & propagation
 │       ├── engine.py               # Stage 3: enforcement engine
@@ -303,10 +308,11 @@ decision:
   - auditable reasons for every taint decision
 - CapabilityProfile derivation — tainted steps (by provenance) never widen the allowed set
 - World Manifest schema — declarative execution boundary with `input_trust` block
+- **Rendered tools projection** (`src/awc/compiler/render_tools.py`) — projects manifest allowed_actions into narrowed, agent-facing `RenderedTool` descriptors; forbidden capabilities are absent from the rendered surface entirely; no-expansion invariant enforced
 - Deterministic enforcement engine — provenance-aware, not annotation-driven
 - Two trace fixtures (benign and unsafe, with `depends_on` dependency chains)
 - CLI for trace evaluation
-- Unit tests covering core invariants, taint derivation, and propagation
+- Unit tests covering core invariants, taint derivation, propagation, and rendered-tool projection
 - Interactive Jupyter notebook walkthrough
 
 ### Current abstraction level
