@@ -18,6 +18,9 @@ assigned or heuristic label.
 
 from __future__ import annotations
 
+# Taint is derived from provenance (input_sources + depends_on),
+# not from annotations or model output.
+
 # Canonical trust map for known input source types.
 # Manifests embed this directly under input_trust; it is also used by the
 # profiler and as a fallback when no manifest trust map is available.

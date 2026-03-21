@@ -58,7 +58,7 @@ Four stages. Each has a clear input and a clear output.
 
 The trace is the first concrete runtime artifact. Everything else is derived from it.
 
-One important clarification: this boundary is not global to the agent. It is scoped to a specific workflow. We are deriving least-privilege boundaries for agent workflows — not for agents as a whole.
+One important clarification: this boundary is not global to the agent. It is scoped to a specific workflow. Each manifest defines a boundary for a specific workflow, not for the agent globally. We are deriving least-privilege boundaries for agent workflows — not for agents as a whole.
 
 *[PAUSE]*
 
@@ -168,6 +168,8 @@ Let me step back and state the value plainly.
 
 The pattern bridges runtime observation and design-time policy. You observe real execution. You derive a profile from what actually happened. You compile a manifest from that profile. The resulting policy is evidence-backed, not guessed.
 
+There are two distinct levels at which the boundary operates, and it is worth being precise about both. The enforcement engine applies policy: it evaluates a concrete step and returns `ALLOW` or `DENY`. But the rendered tool layer operates at a different level — it is an ontology restriction. If an action is not in the manifest's allowed set, it is never rendered as a tool at all. The agent cannot invoke it because it does not exist in the agent's visible capability surface. These are not the same restriction. "Not available" and "available but denied" are distinct mechanisms. Rendered tools are not a convenience layer; they are a projection of the same boundary enforced by the policy engine.
+
 The resulting boundary is:
 - **reproducible** — anyone can re-derive it from the same trace
 - **reviewable** — the manifest is a human-readable YAML document; an operator can inspect and approve it
@@ -212,6 +214,8 @@ If you are building or operating agent systems today, here is what this pattern 
 **Derive, then review.** Use observed traces to generate a draft capability profile. Review it. Tighten it. Compile a manifest. That manifest then becomes the policy artifact your team reviews and signs off on.
 
 **Move decisions to design time.** The point of deterministic enforcement is to reduce runtime improvisation. Approval gates that currently happen ad hoc can be made explicit. Actions that are clearly out of scope can be denied unconditionally.
+
+There is a deeper shift here worth naming: this moves human decision-making from runtime approvals to design-time boundary definition. Instead of an operator approving each individual action as it occurs, the operator reviews the manifest once. This reduces operational load from O(n) approvals — one per action, per run — to O(1) policy review. The human judgment is still there; it is applied earlier and at a higher level of abstraction.
 
 ---
 

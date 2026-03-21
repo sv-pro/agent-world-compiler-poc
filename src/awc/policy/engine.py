@@ -127,8 +127,8 @@ def evaluate_step(
 
     if matched_entry is None:
         return Decision.DENY, (
-            f"Action '{action}' on resource '{resource}' is not in the allowed set "
-            f"(undefined actions are denied by policy)."
+            f"Action '{action}' on resource '{resource}' is not registered in the "
+            f"compiled boundary — undefined action, denied by policy."
         )
 
     # Rule 5: trust check
