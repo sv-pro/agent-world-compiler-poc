@@ -6,7 +6,7 @@ From Behavior to Boundaries: Compiling Observed Agent Execution into Least-Privi
 
 ## Alternate Title
 
-Agent Hypervisor: Turning Agent Behavior into Deterministic Security Boundaries
+Compiling Agent Behavior into Deterministic Security Boundaries
 
 ## Track
 
