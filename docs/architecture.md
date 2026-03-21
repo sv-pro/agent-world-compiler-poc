@@ -137,9 +137,25 @@ RenderedTool (Python dataclass)   ← Stage 2.5 output
 
 The `RenderedTool` list is the agent-facing surface: raw tools are broad; rendered tools are narrowed capabilities. Capabilities not in `allowed_actions` (i.e. those in `denied_actions` or absent entirely) are not exposed as rendered tools at all.
 
+Rendered tools are not a convenience layer; they are a projection of the same boundary enforced by the policy engine. Each manifest defines a boundary for a specific workflow, not for the agent globally.
+
 ### Current abstraction level
 
 The trace schema captures `(tool, action, resource)` per step. The profiler and compiler currently collapse some of this structure — for example, actions are grouped by type rather than tracked as distinct `(tool, action, resource)` triples in the manifest. This is a deliberate PoC simplification; the trace schema retains the richer structure for future use.
+
+## Restriction hierarchy
+
+There are two distinct levels at which an action can be unavailable to the agent:
+
+1. **Ontology (rendered tools)** — Does this action exist? If it is not in the manifest's `allowed_actions`, it is never rendered as a tool. The agent has no surface to invoke it.
+2. **Policy (manifest)** — Is it allowed? If the action exists but the manifest denies it, the enforcement engine returns `DENY`.
+3. **Enforcement (engine)** — The engine applies the decision. It evaluates a concrete step against the manifest and returns `ALLOW`, `DENY`, or `REQUIRE_APPROVAL`.
+
+> First: does this action exist? Then: is it allowed?
+
+Some actions do not exist in the compiled boundary. Others exist but are not allowed.
+
+---
 
 ## Decision rules (priority order)
 

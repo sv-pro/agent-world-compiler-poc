@@ -8,8 +8,10 @@ Instead of exposing raw tools and filtering them at runtime, this PoC shows how 
 
 ## What this is
 
-This PoC does not try to make agent reasoning safe.  
+This PoC does not try to make agent reasoning safe.
 It makes the executable boundary around agent actions **explicit, minimal, and reproducible**.
+
+This PoC demonstrates boundary derivation and enforcement; rendered tools show how the same boundary can be projected into the agent's visible tool surface.
 
 This PoC is **workflow-scoped**: each manifest defines a least-privilege boundary for a specific agent workflow, not for the agent as a whole.
 
@@ -60,7 +62,9 @@ rendered_tools:
 
 Forbidden capabilities are not denied — they are simply **absent**.
 
-> The agent does not choose what to do and get filtered.  
+The agent does not operate over raw tools. It operates over rendered capabilities derived from the manifest.
+
+> The agent does not choose what to do and get filtered.
 > The agent can only act within what exists.
 
 ---
@@ -189,6 +193,28 @@ This PoC derives it from real execution:
 
 ---
 
+## Two Levels of Restriction
+
+There are two distinct ways an action can be unavailable to the agent:
+
+**Level 1 — Ontology (rendered tools):** The action does not exist in the agent's visible tool surface. It was never registered. The agent has no capability to invoke it. This is restriction by absence.
+
+**Level 2 — Policy (enforcement):** The action exists as a raw tool, but the manifest does not permit it. The agent attempts to invoke it; the engine evaluates the step and returns `DENY`.
+
+Example:
+
+```
+git_push → DENY (tool not registered)   ← ontology: does not exist in rendered surface
+http_post → DENY (tainted)              ← policy: exists, but denied by enforcement
+```
+
+These are not the same restriction. "Not available" and "available but denied" are distinct concepts with different enforcement mechanisms.
+
+> Some actions do not exist.
+> Others exist, but are not allowed.
+
+---
+
 ## Why rendered tools matter
 
 Policies alone are external.
@@ -198,6 +224,8 @@ Rendered tools make the boundary part of the execution model:
 - Raw tools → ambient capability
 - Policy → external filter
 - Rendered tools → **constructed execution world**
+
+Rendered tools are not a convenience layer; they are a projection of the same boundary enforced by the policy engine.
 
 > Instead of filtering behavior, we define what behavior can exist.
 
@@ -221,17 +249,25 @@ Rendered tools make the boundary part of the execution model:
 git_commit → ALLOW
 ```
 
-### Denied (taint)
+### Denied (tainted input)
 
 ```yaml
 http_post → DENY (tainted)
 ```
 
-### Denied (undefined)
+### Denied (explicitly denied action)
 
 ```yaml
-env_read → DENY
+env_read → DENY (explicitly denied: not in declared workflow)
 ```
+
+### Denied (undefined — not registered)
+
+```yaml
+git_push → DENY (tool not registered)
+```
+
+This last case is distinct: the action is not in `allowed_actions` and was never registered. It does not exist in the compiled boundary. Undefined = deny.
 
 ---
 

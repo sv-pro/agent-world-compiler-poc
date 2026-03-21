@@ -23,6 +23,9 @@ the full platform.
 
 from __future__ import annotations
 
+# Rendered tools represent the ontology layer:
+# capabilities that do not exist here cannot be invoked by the agent.
+
 import re
 from dataclasses import dataclass, field
 from typing import Any
