@@ -2,7 +2,7 @@
 examples/demo_pipeline.py – end-to-end demonstration of the Agent World Compiler.
 
 Runs the full pipeline for both the benign and the unsafe trace:
-    Observe → Profile → Manifest → Enforce
+    Observe → Profile → Manifest → Render Tools → Enforce
 
 Usage:
     python -m examples.demo_pipeline
@@ -18,6 +18,7 @@ import yaml  # type: ignore[import-untyped]
 
 from awc.compiler.profiler import derive_profile
 from awc.compiler.compile_manifest import compile_manifest
+from awc.compiler.render_tools import render_tools
 from awc.policy.engine import evaluate_step, Decision
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -60,6 +61,35 @@ def run_demo() -> None:
     _banner("STAGE 2 — Profile → Compiled World Manifest")
     manifest = compile_manifest(profile, manifest_id="repo-safe-write-demo", author="Sergey Vlasov")
     print(yaml.dump(manifest, default_flow_style=False, sort_keys=False))
+
+    # ------------------------------------------------------------------ #
+    # Stage 2.5 – Render Tools                                            #
+    # ------------------------------------------------------------------ #
+    _banner("STAGE 2.5 — Manifest → Rendered Tools (agent-facing surface)")
+    rendered = render_tools(manifest)
+    print(f"  {len(rendered)} rendered tool(s) derived from {len(manifest['allowed_actions'])} allowed action(s).")
+    print(f"  {len(manifest.get('denied_actions', []))} denied action(s) NOT exposed as tools.")
+    print()
+    col_name  = 32
+    col_base  = 14
+    col_args  = 20
+    col_res   = 30
+    header = (
+        f"  {'Name':<{col_name}} {'Base Tool':<{col_base}} "
+        f"{'Fixed Args':<{col_args}} {'Resource Constraint':<{col_res}}"
+    )
+    print(header)
+    print("  " + "-" * (col_name + col_base + col_args + col_res + 3))
+    for t in rendered:
+        fixed = ", ".join(f"{k}={v}" for k, v in t.fixed_args.items()) or "—"
+        patterns = ", ".join(t.allowed_resource_patterns) or "—"
+        print(
+            f"  {t.name:<{col_name}} {t.base_tool:<{col_base}} "
+            f"{fixed:<{col_args}} {patterns:<{col_res}}"
+        )
+    print()
+    print("  Key insight: forbidden capabilities (denied_actions) are absent from")
+    print("  this table — they are not exposed as tools at all.")
 
     # ------------------------------------------------------------------ #
     # Stage 3 – Enforce: benign trace                                     #
@@ -109,7 +139,9 @@ def run_demo() -> None:
     print("  The PoC demonstrated:")
     print("  1. Observed execution was reduced to a capability profile.")
     print("  2. The profile was compiled into a World Manifest.")
-    print("  3. The manifest produced deterministic ALLOW / DENY / REQUIRE_APPROVAL decisions.")
+    print("  3. The manifest was projected into a narrowed, agent-facing tool surface.")
+    print("     Forbidden capabilities were absent from the rendered tool table entirely.")
+    print("  4. The manifest produced deterministic ALLOW / DENY / REQUIRE_APPROVAL decisions.")
     print()
 
 
