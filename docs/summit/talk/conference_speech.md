@@ -58,6 +58,8 @@ Four stages. Each has a clear input and a clear output.
 
 The trace is the first concrete runtime artifact. Everything else is derived from it.
 
+One important clarification: this boundary is not global to the agent. It is scoped to a specific workflow. We are deriving least-privilege boundaries for agent workflows — not for agents as a whole.
+
 *[PAUSE]*
 
 ---
@@ -205,7 +207,7 @@ If you are building or operating agent systems today, here is what this pattern 
 
 **Log structured execution.** If your agent framework does not emit structured traces with tool, action, resource, and input provenance, start there. The trace is the foundation.
 
-**Identify bounded workflow modes.** Most agents have recurring patterns — the repository maintenance case, the ticket-triage case, the data-fetch case. Each of those is a candidate for a manifest.
+**Identify bounded workflow modes.** Most agents have recurring patterns — the repository maintenance case, the ticket-triage case, the data-fetch case. Each of those is a candidate for a manifest. Workflows are the unit of security here; each manifest maps to one recurring execution pattern.
 
 **Derive, then review.** Use observed traces to generate a draft capability profile. Review it. Tighten it. Compile a manifest. That manifest then becomes the policy artifact your team reviews and signs off on.
 

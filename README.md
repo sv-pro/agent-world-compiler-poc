@@ -1,6 +1,6 @@
 # Agent World Compiler PoC
 
-A minimal proof-of-concept showing how observed agent execution can be compiled into deterministic least-privilege runtime boundaries.
+A minimal proof-of-concept for deriving least-privilege boundaries for agent workflows from observed execution.
 
 ---
 
@@ -8,6 +8,8 @@ A minimal proof-of-concept showing how observed agent execution can be compiled 
 
 This PoC does not try to make agent reasoning safe.
 It makes the executable boundary around agent actions explicit, minimal, and reproducible.
+
+This PoC is workflow-scoped: each manifest defines a least-privilege boundary for a specific agent workflow, not for the agent as a whole.
 
 The central pattern is:
 
@@ -175,7 +177,7 @@ The difference matters:
 
 The value is not just that a manifest exists — it is that the manifest can be derived from evidence rather than guessed.
 
-Observed execution provides an empirical basis for capability boundaries. Design-time policy becomes reproducible and reviewable, and over-permissioning is reduced because the profile reflects what was actually done, not what might conceivably be needed.
+Observed execution provides an empirical basis for workflow-specific capability boundaries. Design-time policy becomes reproducible and reviewable, and over-permissioning is reduced per workflow because the profile reflects what that specific workflow actually did — not what an agent might conceivably need across all tasks.
 
 ---
 
