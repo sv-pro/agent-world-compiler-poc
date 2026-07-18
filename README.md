@@ -1,3 +1,9 @@
+> **⚠️ Archived — reference only.** Part of the *Agentic Execution Governance* research cluster, preserved read-only for its lineage. **Active development lives in [ai2rules](https://github.com/sv-pro/ai2rules).** See that repo's `DECISIONS.md` (D38, D40) for how this work was superseded and where each idea now lives.
+>
+> **This repo:** PoC: derive least-privilege boundaries from observed execution. Role fulfilled by `ai2rules/crates/compiler`.
+
+---
+
 # Agent World Compiler PoC
 
 A minimal proof-of-concept for deriving least-privilege boundaries for agent workflows from observed execution.
